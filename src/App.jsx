@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Upload, 
   Settings, 
@@ -39,19 +39,94 @@ const providerModels = {
     { id: "meta-llama/llama-4-maverick-17b-128e-instruct", name: "Llama 4 Maverick" }
   ],
   gemini: [
-    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
-    { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite" },
+    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
     { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
-    { id: "gemini-3-flash", name: "Gemini 3 Flash (Preview)" }
+    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" }
   ]
 };
+
+const ImageCard = React.memo(({ img, activeMode, activeProvider, onSelect, onDelete, onRegenerate, formatFileSize, copyToClipboard }) => {
+  return (
+    <div className="card-horizontal">
+      {/* Left: Image Section */}
+      <div className="card-left">
+        <div className="card-image-box">
+          <img src={img.preview} alt="Preview" className="card-img-main" onClick={() => onSelect(img)} />
+          <button className="card-delete-btn" onClick={() => onDelete(img.id)} title="Delete Image">
+            <Trash2 size={16} />
+          </button>
+        </div>
+        <div className="file-meta-info">
+          <p className="file-name-label">{img.file.name}</p>
+          <p className="file-size-label">Size: {formatFileSize(img.file.size)} → {img.metadata ? 'Processed' : '...'}</p>
+        </div>
+      </div>
+
+      {/* Right: Content Section */}
+      <div className="card-right">
+        <div className="metadata-field">
+          <div className="field-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Type size={14} color="var(--text-secondary)" />
+                  <span className="field-label">Title</span>
+              </div>
+              <span className="char-count">{img.metadata?.title?.length || 0} characters</span>
+          </div>
+          <div className="title-box-mockup">
+            {img.status === 'done' ? (
+              activeMode === 'metadata' ? (
+                <span>{img.metadata?.title}</span>
+              ) : img.promptOutput
+            ) : (
+              <span style={{ color: '#aaa' }}>{img.status === 'generating' ? 'Analyzing...' : (img.status === 'pending' ? 'Waiting for generation...' : 'Error generating')}</span>
+            )}
+          </div>
+        </div>
+
+        <div className="metadata-field">
+          <div className="field-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Database size={14} color="var(--text-secondary)" />
+                  <span className="field-label">Keywords ({img.metadata?.keywords?.length || 0})</span>
+              </div>
+          </div>
+          <div className="keywords-cloud-mockup">
+            {img.status === 'done' && img.metadata?.keywords ? (
+              img.metadata.keywords.slice(0, 25).map((kw, i) => (
+                 <span key={i} className="keyword-pill">{kw}</span>
+              ))
+            ) : (
+              <span style={{ color: '#444' }}>Keywords will appear here</span>
+            )}
+            {img.metadata?.keywords?.length > 25 && <span className="keyword-pill">+{img.metadata.keywords.length - 25} more</span>}
+          </div>
+        </div>
+
+        <div className="card-actions-row">
+          <div style={{ display: 'flex', gap: '12px' }}>
+              <button className="action-btn-outline" onClick={() => copyToClipboard(img.metadata?.title || '')}>
+                  <Copy size={16} /> Copy Title
+              </button>
+              <button className="action-btn-outline" onClick={() => copyToClipboard(img.metadata?.keywords?.join(', ') || '')}>
+                  <Copy size={16} /> Copy Keywords
+              </button>
+          </div>
+          <button className="action-btn-regen" onClick={() => onRegenerate(img.id)}>
+              <Sparkles size={16} /> {img.status === 'done' ? 'Regenerate' : 'Retry'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+});
 
 const DetailsModal = ({ isOpen, onClose, image, activeMode, activeProvider, onRegenerate }) => {
   if (!isOpen || !image) return null;
 
-  const copyToClipboard = (text) => {
+  const copyToClipboard = useCallback((text) => {
     navigator.clipboard.writeText(text);
-  };
+    // Simple toast would be nice, but for now we'll just use the button state if we had one
+  }, []);
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -63,7 +138,7 @@ const DetailsModal = ({ isOpen, onClose, image, activeMode, activeProvider, onRe
           </div>
           <X size={24} style={{ cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={onClose} />
         </div>
-        
+
         <div className="details-modal-content">
           <div className="details-image-view">
             <img src={image.preview} alt="Large preview" />
@@ -101,9 +176,9 @@ const DetailsModal = ({ isOpen, onClose, image, activeMode, activeProvider, onRe
                     </div>
                     <div className="card-keywords" style={{ maxHeight: 'none', overflow: 'visible' }}>
                       {image.metadata.keywords.map((kw, i) => (
-                        <span key={i} className="keyword-tag" style={{ 
-                          background: 'rgba(255, 255, 255, 0.1)', 
-                          color: '#FFFFFF' 
+                        <span key={i} className="keyword-tag" style={{
+                          background: 'rgba(255, 255, 255, 0.1)',
+                          color: '#FFFFFF'
                         }}>
                           {kw}
                         </span>
@@ -128,10 +203,10 @@ const DetailsModal = ({ isOpen, onClose, image, activeMode, activeProvider, onRe
                 {image.status === 'error' && <p className="error-text">{image.error}</p>}
               </div>
             )}
-            
+
             <div className="details-footer-actions">
-                <button 
-                  className="regen-btn-full" 
+                <button
+                  className="regen-btn-full"
                   onClick={() => onRegenerate(image.id)}
                   disabled={image.status === 'generating'}
                 >
@@ -161,7 +236,7 @@ const LoginModal = ({ isOpen, onClose, onLogin }) => {
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
           </div>
-          
+
           <h2 className="google-h2" style={{ marginBottom: '1rem', color: '#fff' }}>Sign in to Metadata Gen</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '2rem' }}>
             Use your Google Account to access all features.
@@ -210,12 +285,12 @@ const ApiKeysModal = ({ isOpen, onClose, apiKeys, onAddKey, onRemoveKey, activeP
           </div>
           <X size={24} style={{ cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={onClose} />
         </div>
-        
+
         <div className="modal-content">
           <div className="api-management-layout">
             <div className="providers-sidebar">
               <p className="section-title">Select AI Provider</p>
-              <div 
+              <div
                 className={`provider-card ${modalProvider === 'groq' ? 'active' : ''}`}
                 onClick={() => setModalProvider('groq')}
               >
@@ -228,7 +303,7 @@ const ApiKeysModal = ({ isOpen, onClose, apiKeys, onAddKey, onRemoveKey, activeP
                   </div>
                 </div>
               </div>
-              <div 
+              <div
                 className={`provider-card ${modalProvider === 'gemini' ? 'active' : ''}`}
                 onClick={() => setModalProvider('gemini')}
               >
@@ -250,14 +325,14 @@ const ApiKeysModal = ({ isOpen, onClose, apiKeys, onAddKey, onRemoveKey, activeP
                         {modalProvider === 'groq' ? 'Groq Configuration' : 'Gemini Configuration'}
                     </h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                    {modalProvider === 'groq' 
+                    {modalProvider === 'groq'
                         ? "Groq's advanced AI models for ultrafast image analysis."
                         : "Google's most capable AI models for multimodal tasks."
                     }
                     </p>
                 </div>
                 {activeProvider !== modalProvider && (
-                    <button 
+                    <button
                         onClick={() => setActiveProvider(modalProvider)}
                         style={{ background: '#5EFF00', color: '#000', fontSize: '0.75rem', padding: '0.4rem 0.75rem' }}
                     >
@@ -269,8 +344,8 @@ const ApiKeysModal = ({ isOpen, onClose, apiKeys, onAddKey, onRemoveKey, activeP
               <div style={{ marginBottom: '2rem' }}>
                 <p className="section-title">Add New Key</p>
                 <div className="api-input-wrapper">
-                  <input 
-                    type="password" 
+                  <input
+                    type="password"
                     placeholder={`Enter ${modalProvider === 'groq' ? 'Groq' : 'Gemini'} API key`}
                     value={newKey}
                     onChange={(e) => setNewKey(e.target.value)}
@@ -281,21 +356,21 @@ const ApiKeysModal = ({ isOpen, onClose, apiKeys, onAddKey, onRemoveKey, activeP
                         }
                     }}
                   />
-                  <button 
+                  <button
                     onClick={() => {
                         if (newKey.trim()) {
                             onAddKey(modalProvider, newKey.trim());
                             setNewKey('');
                         }
-                    }} 
+                    }}
                     style={{ background: '#5EFF00', color: '#000', padding: '0.75rem' }}
                   >
                     <Plus size={20} />
                   </button>
                 </div>
-                <a 
+                <a
                   href={modalProvider === 'groq' ? "https://console.groq.com/keys" : "https://aistudio.google.com/app/apikey"}
-                  target="_blank" 
+                  target="_blank"
                   rel="noopener noreferrer"
                   style={{ fontSize: '0.75rem', color: '#5EFF00', textDecoration: 'none', display: 'inline-block', marginTop: '0.75rem' }}
                 >
@@ -312,8 +387,8 @@ const ApiKeysModal = ({ isOpen, onClose, apiKeys, onAddKey, onRemoveKey, activeP
                         {showKeys[idx] ? key : `••••••••${key.slice(-4)}`}
                       </code>
                       <div className="key-actions">
-                        {showKeys[idx] ? 
-                          <EyeOff size={16} onClick={() => toggleKeyVisibility(idx)} /> : 
+                        {showKeys[idx] ?
+                          <EyeOff size={16} onClick={() => toggleKeyVisibility(idx)} /> :
                           <Eye size={16} onClick={() => toggleKeyVisibility(idx)} />
                         }
                         <Trash2 size={16} className="trash" onClick={() => onRemoveKey(modalProvider, key)} />
@@ -352,7 +427,7 @@ const App = () => {
     return localStorage.getItem('dmatadata_active_provider') || 'groq';
   });
   const [isGenerating, setIsGenerating] = useState(false);
-  const [activeMode, setActiveMode] = useState('metadata'); 
+  const [activeMode, setActiveMode] = useState('metadata');
   const [showModal, setShowModal] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
@@ -395,7 +470,7 @@ const App = () => {
     localStorage.setItem('dmatadata_active_provider', activeProvider);
     groqService.setApiKeys(apiKeys.groq || []);
     geminiService.setApiKeys(apiKeys.gemini || []);
-    
+
     // Ensure selected model belongs to active provider
     if (!providerModels[activeProvider].some(m => m.id === selectedModel)) {
         setSelectedModel(providerModels[activeProvider][0].id);
@@ -432,9 +507,9 @@ const App = () => {
     }));
   };
 
-  const deleteImage = (id) => {
+  const deleteImage = useCallback((id) => {
     setImages(prev => prev.filter(img => img.id !== id));
-  };
+  }, []);
 
   const formatFileSize = (bytes) => {
     if (bytes === 0) return '0 Bytes';
@@ -447,9 +522,9 @@ const App = () => {
   // Helper to ensure text ends correctly and within character limit
   const cleanMetadataText = (text, maxLength, isTitle = false) => {
     if (!text) return "";
-    
+
     let processed = text.trim();
-    
+
     // If it's too long, we need to truncate responsibly
     if (processed.length > maxLength) {
       let truncated = processed.substring(0, maxLength);
@@ -479,7 +554,7 @@ const App = () => {
     return processed;
   };
 
-  const generateSingle = async (imgId) => {
+  const generateSingle = useCallback(async (imgId) => {
     if (!user) {
       setShowLoginModal(true);
       return;
@@ -491,53 +566,52 @@ const App = () => {
       return;
     }
 
-    const img = images.find(i => i.id === imgId);
-    if (!img) return;
-
-    setImages(prev => prev.map(i => i.id === img.id ? { ...i, status: 'generating', error: null } : i));
+    setImages(prev => prev.map(i => i.id === imgId ? { ...i, status: 'generating', error: null } : i));
 
     const service = activeProvider === 'groq' ? groqService : geminiService;
 
     try {
+      const img = images.find(i => i.id === imgId);
+      if (!img) return;
       const base64 = await GroqService.fileToBase64(img.file);
-      
+
       let result;
       if (activeMode === 'metadata') {
          result = await service.generateMetadata(base64, {
-          titleLen,
-          descLen,
-          keywordCount,
-          model: selectedModel
-        });
+            titleLen,
+            descLen,
+            keywordCount,
+            model: selectedModel
+          });
 
         // Apply strict formatting and cleaning
         result.title = cleanMetadataText(result.title, titleLen[1], true);
         result.description = cleanMetadataText(result.description, descLen[1], false);
 
-        setImages(prev => prev.map(i => i.id === img.id ? { 
-          ...i, 
-          status: 'done', 
-          metadata: result 
+        setImages(prev => prev.map(i => i.id === imgId ? {
+          ...i,
+          status: 'done',
+          metadata: result
         } : i));
       } else {
          result = await service.generatePrompt(base64, {
           promptLen,
           model: selectedModel
         });
-        setImages(prev => prev.map(i => i.id === img.id ? { 
-          ...i, 
-          status: 'done', 
-          promptOutput: result 
+        setImages(prev => prev.map(i => i.id === imgId ? {
+          ...i,
+          status: 'done',
+          promptOutput: result
         } : i));
       }
     } catch (error) {
-      setImages(prev => prev.map(i => i.id === img.id ? { 
-        ...i, 
-        status: 'error', 
-        error: error.message 
+      setImages(prev => prev.map(i => i.id === imgId ? {
+        ...i,
+        status: 'error',
+        error: error.message
       } : i));
     }
-  };
+  }, [user, apiKeys, activeProvider, activeMode, titleLen, descLen, keywordCount, promptLen, selectedModel, images]);
 
   const generateAll = async () => {
     if (!user) {
@@ -596,7 +670,7 @@ const App = () => {
         setStats(prev => ({ ...prev, completed: prev.completed + 1 }));
 
         if (pendingImages.indexOf(img) < pendingImages.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
 
       } catch (error) {
@@ -860,78 +934,17 @@ const App = () => {
         ) : (
           <div className="image-grid">
             {images.map(img => (
-              <div key={img.id} className="card-horizontal">
-                {/* Left: Image Section */}
-                <div className="card-left">
-                  <div className="card-image-box">
-                    <img src={img.preview} alt="Preview" className="card-img-main" onClick={() => setSelectedImage(img)} />
-                    <button className="card-delete-btn" onClick={() => deleteImage(img.id)} title="Delete Image">
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                  <div className="file-meta-info">
-                    <p className="file-name-label">{img.file.name}</p>
-                    <p className="file-size-label">Size: {formatFileSize(img.file.size)} → {img.metadata ? '11.9KB' : '...'}</p>
-                  </div>
-                </div>
-
-                {/* Right: Content Section */}
-                <div className="card-right">
-                  <div className="metadata-field">
-                    <div className="field-header">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Type size={14} color="var(--text-secondary)" />
-                            <span className="field-label">Title</span>
-                        </div>
-                        <span className="char-count">{img.metadata?.title?.length || 0} characters</span>
-                    </div>
-                    <div className="title-box-mockup">
-                      {img.status === 'done' ? (
-                        activeMode === 'metadata' ? (
-                          <span>
-                            {img.metadata?.title}
-                          </span>
-                        ) : img.promptOutput
-                      ) : (
-                        <span style={{ color: '#aaa' }}>{img.status === 'generating' ? 'Analyzing...' : 'Waiting for generation...'}</span>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="metadata-field">
-                    <div className="field-header">
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <Database size={14} color="var(--text-secondary)" />
-                            <span className="field-label">Keywords ({img.metadata?.keywords?.length || 0})</span>
-                        </div>
-                    </div>
-                    <div className="keywords-cloud-mockup">
-                      {img.status === 'done' && img.metadata?.keywords ? (
-                        img.metadata.keywords.slice(0, 25).map((kw, i) => (
-                           <span key={i} className="keyword-pill">{kw}</span>
-                        ))
-                      ) : (
-                        <span style={{ color: '#444' }}>Keywords will appear here</span>
-                      )}
-                      {img.metadata?.keywords?.length > 25 && <span className="keyword-pill">+{img.metadata.keywords.length - 25} more</span>}
-                    </div>
-                  </div>
-
-                  <div className="card-actions-row">
-                    <div style={{ display: 'flex', gap: '12px' }}>
-                        <button className="action-btn-outline" onClick={() => copyToClipboard(img.metadata?.title || '')}>
-                            <Copy size={16} /> Copy Title
-                        </button>
-                        <button className="action-btn-outline" onClick={() => copyToClipboard(img.metadata?.keywords?.join(', ') || '')}>
-                            <Copy size={16} /> Copy Keywords
-                        </button>
-                    </div>
-                    <button className="action-btn-regen" onClick={() => generateSingle(img.id)}>
-                        <Sparkles size={16} /> Regenerate
-                    </button>
-                  </div>
-                </div>
-              </div>
+              <ImageCard 
+                key={img.id}
+                img={img}
+                activeMode={activeMode}
+                activeProvider={activeProvider}
+                onSelect={setSelectedImage}
+                onDelete={deleteImage}
+                onRegenerate={generateSingle}
+                formatFileSize={formatFileSize}
+                copyToClipboard={copyToClipboard}
+              />
             ))}
             <label className="card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', borderStyle: 'dashed', minHeight: '300px', background: 'rgba(255,255,255,0.01)' }}>
                 <input type="file" multiple accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
