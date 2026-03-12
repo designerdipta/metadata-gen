@@ -53,12 +53,12 @@ class GeminiService {
     const prompt = `Analyze this image and provide metadata in JSON format with exactly three keys: "title", "description", and "keywords".
 
 STRICT MANDATORY REQUIREMENTS:
-1. Title: MUST be a COMPLETE, grammatically correct sentence ending with a period (.).
-   - TARGET LENGTH: It MUST be within 5-8 characters of ${titleLen[1]} (e.g., if target is 110, aim for 102-110).
-   - COMPLETENESS: It is CRITICAL that the sentence is fully finished. NEVER cut off mid-word or mid-thought.
-   - MAXIMUM: Never exceed ${titleLen[1]} characters under any circumstances.
-2. Keywords: MUST be an array of exactly ${keywordCount[1]} unique descriptive keywords.
-3. Description: MUST consist of complete sentences and aim for approximately ${descLen[1]} characters.
+1. Title: MUST be a COMPLETE, grammatically correct phrase or sentence.
+   - TARGET LENGTH: Within 5-8 characters of ${titleLen[1]}.
+   - NO PUNCTUATION: DO NOT end the title with a period (.), ellipsis (...), or any other punctuation.
+   - COMPLETENESS: Ensure the thought is finished but WITHOUT the final period.
+2. Keywords: Exactly ${keywordCount[1]} unique descriptive keywords as a JSON array.
+3. Description: Complete sentences, approximately ${descLen[1]} characters, ending with a period.
 
 Guidelines:
 - Title: Descriptive, factual, and very long (to meet the requirement). Avoid brands or artist names.

@@ -444,18 +444,13 @@ const App = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
 
-  // Helper to ensure text ends with a complete sentence within character limit
-  const ensureCompleteSentence = (text, maxLength) => {
+  // Helper to ensure text ends correctly and within character limit
+  const cleanMetadataText = (text, maxLength, isTitle = false) => {
     if (!text) return "";
     
     let processed = text.trim();
     
-    // If it's already within limits and ends with punctuation, we're good
-    if (processed.length <= maxLength && /[.!?]$/.test(processed)) {
-      return processed;
-    }
-
-    // If it's too long, we need to truncate at the last possible sentence end
+    // If it's too long, we need to truncate responsibly
     if (processed.length > maxLength) {
       let truncated = processed.substring(0, maxLength);
       const lastPunct = Math.max(
@@ -465,34 +460,20 @@ const App = () => {
       );
 
       if (lastPunct > maxLength * 0.5) {
-        // We found a reasonable sentence end
-        return truncated.substring(0, lastPunct + 1).trim();
+        processed = truncated.substring(0, lastPunct + 1).trim();
+      } else {
+        const lastSpace = truncated.lastIndexOf(' ');
+        processed = (lastSpace > 0 ? truncated.substring(0, lastSpace) : truncated).trim();
+        if (!isTitle) processed += ".";
       }
-
-      // If no sentence end, try to cut at a comma or semicolon to at least be somewhat readable
-      const lastPause = Math.max(
-        truncated.lastIndexOf(','),
-        truncated.lastIndexOf(';'),
-        truncated.lastIndexOf(':')
-      );
-
-      if (lastPause > maxLength * 0.7) {
-        return truncated.substring(0, lastPause).trim() + "...";
-      }
-
-      // Last resort: cut at word and add period
-      const lastSpace = truncated.lastIndexOf(' ');
-      if (lastSpace > 0) {
-        return truncated.substring(0, lastSpace).trim() + ".";
-      }
-      
-      return truncated.trim() + ".";
     }
 
-    // If it's shorter than the limit but doesn't end in punctuation, the AI failed.
-    // We add a period if it doesn't have one.
-    if (!/[.!?]$/.test(processed)) {
-      return processed + ".";
+    if (isTitle) {
+      // For titles, strip ANY trailing punctuation like periods, commas, or ellipses
+      processed = processed.replace(/[.!,;:\s]+$/, '').trim();
+    } else if (!/[.!?]$/.test(processed)) {
+      // For descriptions, ensure it ends with a period if not present
+      processed += ".";
     }
 
     return processed;
@@ -529,9 +510,9 @@ const App = () => {
           model: selectedModel
         });
 
-        // Apply strict smart truncation for sentence completeness
-        result.title = ensureCompleteSentence(result.title, titleLen[1]);
-        result.description = ensureCompleteSentence(result.description, descLen[1]);
+        // Apply strict formatting and cleaning
+        result.title = cleanMetadataText(result.title, titleLen[1], true);
+        result.description = cleanMetadataText(result.description, descLen[1], false);
 
         setImages(prev => prev.map(i => i.id === img.id ? { 
           ...i, 
@@ -591,9 +572,9 @@ const App = () => {
             model: selectedModel
           });
 
-          // Apply strict smart truncation for sentence completeness
-          result.title = ensureCompleteSentence(result.title, titleLen[1]);
-          result.description = ensureCompleteSentence(result.description, descLen[1]);
+          // Apply strict formatting and cleaning
+          result.title = cleanMetadataText(result.title, titleLen[1], true);
+          result.description = cleanMetadataText(result.description, descLen[1], false);
 
           setImages(prev => prev.map(i => i.id === img.id ? { 
             ...i, 
@@ -615,7 +596,7 @@ const App = () => {
         setStats(prev => ({ ...prev, completed: prev.completed + 1 }));
 
         if (pendingImages.indexOf(img) < pendingImages.length - 1) {
-          await new Promise(resolve => setTimeout(resolve, 3000));
+          await new Promise(resolve => setTimeout(resolve, 800));
         }
 
       } catch (error) {
