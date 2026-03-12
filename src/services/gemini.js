@@ -44,7 +44,7 @@ class GeminiService {
   }
 
   async generateMetadata(base64Image, options) {
-    const { titleLen, descLen, keywordCount, model = "gemini-2.0-flash" } = options;
+    const { titleLen, descLen, keywordCount, model = "gemini-2.5-flash" } = options;
     
     // Strip data prefix if exists
     const base64Data = base64Image.split(',')[1] || base64Image;
@@ -90,7 +90,7 @@ Guidelines:
   }
 
   async generatePrompt(base64Image, options) {
-    const { promptLen = 450, model = "gemini-2.0-flash" } = options;
+    const { promptLen = 450, model = "gemini-2.5-flash" } = options;
     const base64Data = base64Image.split(',')[1] || base64Image;
     const mimeType = base64Image.split(';')[0].split(':')[1] || 'image/jpeg';
 

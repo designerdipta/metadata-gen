@@ -40,9 +40,12 @@ const providerModels = {
     { id: "mixtral-8x7b-32768", name: "Mixtral 8x7B (Fast)" }
   ],
   gemini: [
-    { id: "gemini-2.0-flash", name: "Gemini 2.5 Latest" },
-    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Fast)" },
-    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Best Quality)" }
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash" },
+    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro" },
+    { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite" },
+    { id: "gemini-3.1-pro", name: "Gemini 3.1 Pro (Preview)" },
+    { id: "gemini-3-flash", name: "Gemini 3 Flash (Preview)" },
+    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" }
   ]
 };
 
