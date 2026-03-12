@@ -448,34 +448,54 @@ const App = () => {
   const ensureCompleteSentence = (text, maxLength) => {
     if (!text) return "";
     
+    let processed = text.trim();
+    
     // If it's already within limits and ends with punctuation, we're good
-    if (text.length <= maxLength && /[.!?]$/.test(text.trim())) {
-      return text.trim();
+    if (processed.length <= maxLength && /[.!?]$/.test(processed)) {
+      return processed;
     }
 
-    // Truncate to maxLength initially
-    let truncated = text.substring(0, maxLength);
+    // If it's too long, we need to truncate at the last possible sentence end
+    if (processed.length > maxLength) {
+      let truncated = processed.substring(0, maxLength);
+      const lastPunct = Math.max(
+        truncated.lastIndexOf('.'),
+        truncated.lastIndexOf('!'),
+        truncated.lastIndexOf('?')
+      );
 
-    // Look for the last punctuation mark within the truncated string
-    const lastPunct = Math.max(
-      truncated.lastIndexOf('.'),
-      truncated.lastIndexOf('!'),
-      truncated.lastIndexOf('?')
-    );
+      if (lastPunct > maxLength * 0.5) {
+        // We found a reasonable sentence end
+        return truncated.substring(0, lastPunct + 1).trim();
+      }
 
-    if (lastPunct > maxLength * 0.7) {
-      // If we found a sentence ending recently, cut there
-      return truncated.substring(0, lastPunct + 1).trim();
+      // If no sentence end, try to cut at a comma or semicolon to at least be somewhat readable
+      const lastPause = Math.max(
+        truncated.lastIndexOf(','),
+        truncated.lastIndexOf(';'),
+        truncated.lastIndexOf(':')
+      );
+
+      if (lastPause > maxLength * 0.7) {
+        return truncated.substring(0, lastPause).trim() + "...";
+      }
+
+      // Last resort: cut at word and add period
+      const lastSpace = truncated.lastIndexOf(' ');
+      if (lastSpace > 0) {
+        return truncated.substring(0, lastSpace).trim() + ".";
+      }
+      
+      return truncated.trim() + ".";
     }
 
-    // If no punctuation found nearby, cut at the last space and add a period
-    const lastSpace = truncated.lastIndexOf(' ');
-    if (lastSpace > 0) {
-      return truncated.substring(0, lastSpace).trim() + ".";
+    // If it's shorter than the limit but doesn't end in punctuation, the AI failed.
+    // We add a period if it doesn't have one.
+    if (!/[.!?]$/.test(processed)) {
+      return processed + ".";
     }
 
-    // Extreme fallback: just add a period to the truncation
-    return truncated.trim() + ".";
+    return processed;
   };
 
   const generateSingle = async (imgId) => {

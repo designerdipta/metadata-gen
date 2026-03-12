@@ -36,7 +36,10 @@ class GroqService {
         const prompt = `Analyze this image and provide metadata in JSON format with exactly three keys: "title", "description", and "keywords".
 
 STRICT MANDATORY REQUIREMENTS:
-1. Title: MUST be a COMPLETE sentence ending with a period (.). Target length: exactly or slightly less than ${titleLen[1]} characters. NEVER exceed ${titleLen[1]} characters. ABSOLUTE PRIORITY: DO NOT STOP MID-SENTENCE.
+1. Title: MUST be a COMPLETE, grammatically correct sentence ending with a period (.). 
+   - TARGET LENGTH: It MUST be within 5-8 characters of ${titleLen[1]} (e.g., if target is 110, aim for 102-110).
+   - COMPLETENESS: It is CRITICAL that the sentence is fully finished. NEVER cut off mid-word or mid-thought.
+   - MAXIMUM: Never exceed ${titleLen[1]} characters under any circumstances.
 2. Keywords: MUST be an array of exactly ${keywordCount[1]} unique descriptive keywords.
 3. Description: MUST consist of complete sentences and aim for approximately ${descLen[1]} characters.
 
