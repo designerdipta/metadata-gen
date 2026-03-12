@@ -26,6 +26,8 @@ import {
   Clock
 } from 'lucide-react';
 import Papa from 'papaparse';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
+import { jwtDecode } from 'jwt-decode';
 import { groqService } from './services/groq';
 import { geminiService } from './services/gemini';
 import GroqService from './services/groq';
@@ -145,82 +147,45 @@ const DetailsModal = ({ isOpen, onClose, image, activeMode, activeProvider, onRe
 };
 
 const LoginModal = ({ isOpen, onClose, onLogin }) => {
-  const [step, setStep] = useState(1);
-  const accounts = [
-    { name: "Dipta Goswami", email: "diptag22@gmail.com", initial: "D", avatar: null },
-    { name: "dipta Goswami", email: "diptag205@gmail.com", initial: "d", avatar: null }
-  ];
-
-  useEffect(() => {
-    if (isOpen) setStep(1);
-  }, [isOpen]);
-
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay login-overlay" onClick={onClose}>
       <div className="google-login-modal" onClick={e => e.stopPropagation()}>
-        <div className="google-modal-content">
-          <div className="google-logo-wrapper">
-            <svg viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+        <div className="google-modal-content" style={{ padding: '2.5rem', textAlign: 'center' }}>
+          <div className="google-logo-wrapper" style={{ marginBottom: '1.5rem' }}>
+            <svg viewBox="0 0 24 24" width="32" height="32" xmlns="http://www.w3.org/2000/svg">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
               <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
               <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
               <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
             </svg>
           </div>
+          
+          <h2 className="google-h2" style={{ marginBottom: '1rem', color: '#fff' }}>Sign in to Metadata Gen</h2>
+          <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '2rem' }}>
+            Use your Google Account to access all features.
+          </p>
 
-          {step === 1 ? (
-            <div className="google-step-1">
-              <h2 className="google-h2">Sign in</h2>
-              <button className="google-signin-big-btn" onClick={() => {
-                if (window.electron && window.electron.openExternal) {
-                  window.electron.openExternal('https://accounts.google.com/signin');
-                } else {
-                  window.open('https://accounts.google.com/signin', '_blank');
-                }
-                setStep(2);
-              }}>
-                <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" style={{ marginRight: '10px' }}>
-                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-                </svg>
-                Sign in with Google
-              </button>
-            </div>
-          ) : (
-            <div className="google-step-2">
-              <h2 className="google-h2">Choose an account</h2>
-              <div className="google-accounts-list">
-                {accounts.map((acc, i) => (
-                  <div key={i} className="google-account-item" onClick={() => onLogin(acc)}>
-                    <div className="google-account-avatar">
-                      {acc.initial}
-                    </div>
-                    <div className="google-account-info">
-                      <div className="google-account-name">{acc.name}</div>
-                      <div className="google-account-email">{acc.email}</div>
-                    </div>
-                  </div>
-                ))}
-                <div className="google-account-item">
-                  <div className="google-account-avatar google-use-another">
-                    <User size={20} />
-                  </div>
-                  <div className="google-account-info">
-                    <div className="google-account-name">Use another account</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+          <div style={{ display: 'flex', justifyContent: 'center' }}>
+            <GoogleLogin
+              onSuccess={credentialResponse => {
+                onLogin(credentialResponse.credential);
+              }}
+              onError={() => {
+                console.log('Login Failed');
+              }}
+              theme="filled_blue"
+              shape="pill"
+              size="large"
+            />
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
 
 const ApiKeysModal = ({ isOpen, onClose, apiKeys, onAddKey, onRemoveKey, activeProvider, setActiveProvider }) => {
   const [newKey, setNewKey] = useState('');
@@ -397,15 +362,20 @@ const App = () => {
     return saved ? JSON.parse(saved) : null;
   });
 
-  const handleLogin = (selectedUser) => {
-    const mockUser = {
-      name: selectedUser.name,
-      email: selectedUser.email,
-      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(selectedUser.name)}&background=5EFF00&color=000`
-    };
-    setUser(mockUser);
-    localStorage.setItem('metadata_gen_user', JSON.stringify(mockUser));
-    setShowLoginModal(false);
+  const handleLogin = (credential) => {
+    try {
+      const decoded = jwtDecode(credential);
+      const userData = {
+        name: decoded.name,
+        email: decoded.email,
+        avatar: decoded.picture
+      };
+      setUser(userData);
+      localStorage.setItem('metadata_gen_user', JSON.stringify(userData));
+      setShowLoginModal(false);
+    } catch (error) {
+      console.error("Failed to decode Google JWT:", error);
+    }
   };
 
   const handleLogout = () => {
@@ -686,7 +656,8 @@ const App = () => {
   };
 
   return (
-    <div className="app-container">
+    <GoogleOAuthProvider clientId="155072060171-fqvqfn39jl06lcpn2qnqnnhsl884ba5g.apps.googleusercontent.com">
+      <div className="app-container">
       <LoginModal 
         isOpen={showLoginModal} 
         onClose={() => setShowLoginModal(false)} 
@@ -971,7 +942,33 @@ const App = () => {
           </div>
         )}
       </main>
+
+      <LoginModal 
+        isOpen={showLoginModal} 
+        onClose={() => setShowLoginModal(false)}
+        onLogin={handleLogin}
+      />
+
+      <ApiKeysModal 
+        isOpen={showModal} 
+        onClose={() => setShowModal(false)}
+        apiKeys={apiKeys}
+        onAddKey={addApiKey}
+        onRemoveKey={removeApiKey}
+        activeProvider={activeProvider}
+        setActiveProvider={setActiveProvider}
+      />
+      
+      <DetailsModal 
+        isOpen={!!selectedImage}
+        onClose={() => setSelectedImage(null)}
+        image={selectedImage}
+        activeMode={activeMode}
+        activeProvider={activeProvider}
+        onRegenerate={generateSingle}
+      />
     </div>
+    </GoogleOAuthProvider>
   );
 };
 
