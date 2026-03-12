@@ -40,15 +40,15 @@ const providerModels = {
     { id: "mixtral-8x7b-32768", name: "Mixtral 8x7B (Fast)" }
   ],
   gemini: [
-    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Fastest)" },
-    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Powerful)" },
-    { id: "gemini-2.0-flash-exp", name: "Gemini 2.0 Flash Exp" }
+    { id: "gemini-2.0-flash", name: "Gemini 2.5 Latest" },
+    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Fast)" },
+    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Best Quality)" }
   ]
 };
 
 const ImageCard = React.memo(({ img, activeMode, activeProvider, onSelect, onDelete, onRegenerate, formatFileSize, copyToClipboard }) => {
   return (
-    <div className="card-horizontal">
+    <div className={`card-horizontal ${img.status === 'error' ? 'card-error' : ''}`}>
       {/* Left: Image Section */}
       <div className="card-left">
         <div className="card-image-box">
@@ -79,7 +79,17 @@ const ImageCard = React.memo(({ img, activeMode, activeProvider, onSelect, onDel
                 <span>{img.metadata?.title}</span>
               ) : img.promptOutput
             ) : (
-              <span style={{ color: '#aaa' }}>{img.status === 'generating' ? 'Analyzing...' : (img.status === 'pending' ? 'Waiting for generation...' : 'Error generating')}</span>
+              <div className="status-container">
+                {img.status === 'generating' ? (
+                   <span style={{ color: '#aaa' }}>Analyzing...</span>
+                ) : img.status === 'error' ? (
+                   <div style={{ color: '#ff4444', fontSize: '0.8rem' }}>
+                     <strong>Error:</strong> {img.error || 'Unknown error'}
+                   </div>
+                ) : (
+                   <span style={{ color: '#aaa' }}>Waiting for generation...</span>
+                )}
+              </div>
             )}
           </div>
         </div>
@@ -464,7 +474,7 @@ const App = () => {
   const [descLen, setDescLen] = useState([100, 150]);
   const [keywordCount, setKeywordCount] = useState([10, 50]);
   const [promptLen, setPromptLen] = useState(450);
-  const [selectedModel, setSelectedModel] = useState("meta-llama/llama-4-scout-17b-16e-instruct");
+  const [selectedModel, setSelectedModel] = useState("llama-3.2-11b-vision-preview");
 
   useEffect(() => {
     localStorage.setItem('metadata_gen_keys', JSON.stringify(apiKeys));
