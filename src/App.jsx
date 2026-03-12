@@ -35,13 +35,14 @@ import './App.css';
 
 const providerModels = {
   groq: [
-    { id: "meta-llama/llama-4-scout-17b-16e-instruct", name: "Llama 4 Scout" },
-    { id: "meta-llama/llama-4-maverick-17b-128e-instruct", name: "Llama 4 Maverick" }
+    { id: "llama-3.2-11b-vision-preview", name: "Llama 3.2 11B Vision" },
+    { id: "llama-3.2-90b-vision-preview", name: "Llama 3.2 90B Vision" },
+    { id: "mixtral-8x7b-32768", name: "Mixtral 8x7B (Fast)" }
   ],
   gemini: [
-    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" },
-    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash" },
-    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro" }
+    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash (Fastest)" },
+    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro (Powerful)" },
+    { id: "gemini-2.0-flash-exp", name: "Gemini 2.0 Flash Exp" }
   ]
 };
 

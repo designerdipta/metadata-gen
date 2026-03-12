@@ -20,7 +20,7 @@ class GroqService {
   }
 
   async generateMetadata(base64Image, options) {
-    const { titleLen, descLen, keywordCount, model = "meta-llama/llama-4-scout-17b-16e-instruct" } = options;
+    const { titleLen, descLen, keywordCount, model = "llama-3.2-11b-vision-preview" } = options;
     
     // Retry logic for fallback
     let attempts = 0;
@@ -81,7 +81,7 @@ Guidelines:
   }
 
   async generatePrompt(base64Image, options) {
-    const { promptLen = 450, model = "meta-llama/llama-4-scout-17b-16e-instruct" } = options;
+    const { promptLen = 450, model = "llama-3.2-11b-vision-preview" } = options;
     
     let attempts = 0;
     const maxAttempts = this.apiKeys.length;
