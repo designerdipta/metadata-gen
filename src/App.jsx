@@ -26,6 +26,7 @@ import {
   Clock
 } from 'lucide-react';
 import Papa from 'papaparse';
+import Select from 'react-select';
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { jwtDecode } from 'jwt-decode';
 import { groqService } from './services/groq';
@@ -791,15 +792,52 @@ const App = () => {
         </div>
 
           <p className="section-title">Model Selection</p>
-          <select 
-            value={selectedModel} 
-            onChange={(e) => setSelectedModel(e.target.value)}
-            className="model-select"
-          >
-            {providerModels[activeProvider].map(m => (
-                <option key={m.id} value={m.id}>{m.name}</option>
-            ))}
-          </select>
+          <Select
+            value={{ value: selectedModel, label: providerModels[activeProvider].find(m => m.id === selectedModel)?.name }}
+            onChange={(selectedOption) => setSelectedModel(selectedOption.value)}
+            options={providerModels[activeProvider].map(m => ({ value: m.id, label: m.name }))}
+            styles={{
+              control: (base, state) => ({
+                ...base,
+                background: '#000000',
+                borderColor: state.isFocused ? 'var(--accent-color)' : 'var(--border-color)',
+                borderRadius: '10px',
+                padding: '0.2rem',
+                boxShadow: state.isFocused ? '0 0 0 1px var(--accent-color)' : 'none',
+                '&:hover': {
+                  borderColor: 'var(--accent-color)'
+                }
+              }),
+              menu: (base) => ({
+                ...base,
+                background: '#000000',
+                border: '1px solid var(--border-color)',
+                borderRadius: '10px',
+                overflow: 'hidden',
+                zIndex: 100
+              }),
+              option: (base, state) => ({
+                ...base,
+                backgroundColor: state.isFocused ? 'var(--accent-color)' : state.isSelected ? 'rgba(94, 255, 0, 0.2)' : '#000000',
+                color: state.isFocused ? '#000000' : '#ffffff',
+                cursor: 'pointer',
+                '&:active': {
+                  backgroundColor: 'var(--accent-color)',
+                  color: '#000000'
+                }
+              }),
+              singleValue: (base) => ({
+                ...base,
+                color: '#ffffff',
+                fontSize: '0.875rem'
+              }),
+              input: (base) => ({
+                ...base,
+                color: '#ffffff'
+              }),
+              indicatorSeparator: () => ({ display: 'none' })
+            }}
+          />
 
           <div className="mode-toggle-group">
             <button 
