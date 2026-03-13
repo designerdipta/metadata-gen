@@ -794,17 +794,7 @@ const App = () => {
           <select 
             value={selectedModel} 
             onChange={(e) => setSelectedModel(e.target.value)}
-            style={{
-              width: '100%',
-              background: 'rgba(255, 255, 255, 0.05)',
-              border: '1px solid var(--border-color)',
-              borderRadius: '10px',
-              padding: '0.75rem',
-              color: 'white',
-              fontSize: '0.875rem',
-              outline: 'none',
-              cursor: 'pointer'
-            }}
+            className="model-select"
           >
             {providerModels[activeProvider].map(m => (
                 <option key={m.id} value={m.id}>{m.name}</option>
